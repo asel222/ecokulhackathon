@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoKul — Обмен школьных вещей и учебников</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f5;
+        }
+        .eco-gradient {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Навигация -->
+    <nav class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="eco-gradient text-white p-2 rounded-xl font-bold text-xl flex items-center justify-center w-10 h-10">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-xl text-emerald-700 tracking-tight">EcoKul</span>
+                    <span class="hidden sm:inline-block text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full ml-1 font-medium">Актобе • Школа №21</span>
+                </div>
+            </div>
+
+            <!-- Профиль и геймификация -->
+            <div class="flex items-center space-x-3 sm:space-x-5">
+                <div id="userStats" class="hidden flex items-center space-x-3 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                    <div class="text-right">
+                        <div class="text-xs text-gray-500">Уровень: <span id="userLevel" class="font-bold text-emerald-700">Эко-Новичок</span></div>
+                        <div class="text-sm font-bold text-emerald-600"><i class="fas fa-coins text-yellow-500 mr-1"></i><span id="userPoints">150</span> Эко-баллов</div>
+                    </div>
+                </div>
+
+                <button id="authBtn" onclick="openModal('authModal')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                    Войти / Регистрация
+                </button>
+                <div id="userProfile" class="hidden flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-full bg-emerald-200 text-emerald-800 font-bold flex items-center justify-center" id="userAvatar">А</div>
+                    <span id="userNameDisplay" class="font-medium text-sm hidden md:inline">Айгерим</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Баннер / Герой-секция -->
+    <header class="eco-gradient text-white py-10 px-4">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="max-w-xl">
+                <h1 class="text-3xl md:text-4xl font-bold mb-3 leading-tight">Вторая жизнь школьной форме и учебникам!</h1>
+                <p class="text-emerald-50 text-sm md:text-base mb-6">Обменивайся вещами внутри своей школы, зарабатывай Эко-баллы за заботу о природе и экономь семейный бюджет.</p>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="checkAuthAndOpenAdd()" class="bg-white text-emerald-700 hover:bg-emerald-50 font-semibold px-5 py-2.5 rounded-xl shadow transition flex items-center">
+                        <i class="fas fa-plus-circle mr-2"></i> Разместить вещь
+                    </button>
+                    <a href="#catalog" class="bg-emerald-700/50 hover:bg-emerald-700/70 text-white border border-emerald-400/30 font-medium px-5 py-2.5 rounded-xl transition">
+                        Смотреть каталог
+                    </a>
+                </div>
+            </div>
+
+            <!-- Виджет эко-вклада -->
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 w-full md:w-80 text-white">
+                <h3 class="font-semibold text-sm uppercase tracking-wider text-emerald-100 mb-3">Эко-рейтинг школы</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center text-sm">
+                        <span>Спасено деревьев:</span>
+                        <span class="font-bold text-lg" id="treesSaved">42 🌳</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span>Вещей обрели хозяев:</span>
+                        <span class="font-bold text-lg" id="itemsReused">184 🎒</span>
+                    </div>
+                    <div class="w-full bg-emerald-900/40 rounded-full h-2.5 mt-2">
+                        <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 75%"></div>
+                    </div>
+                    <p class="text-xs text-emerald-100 text-right">До статуса «Зеленая школа» осталось 16 обменов</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент: Фильтры и Каталог -->
+    <main id="catalog" class="max-w-6xl mx-auto px-4 py-8">
+        
+        <!-- Панель фильтров -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div class="flex flex-wrap gap-2" id="categoryFilters">
+                <button onclick="filterItems('all')" class="filter-btn active bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Все товары</button>
+                <button onclick="filterItems('uniform')" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition border">👔 Школьная форма</button>
+                <button onclick="filterItems('books')" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition border">📚 Учебники и книги</button>
+                <button onclick="filterItems('stationery')" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition border">✏️ Канцелярия / Рюкзаки</button>
+            </div>
+
+            <div class="w-full sm:w-auto">
+                <select id="schoolFilter" onchange="renderCatalog()" class="w-full sm:w-auto bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5">
+                    <option value="all">Все школы города</option>
+                    <option value="Школа №21">СШ №21 (Моя школа)</option>
+                    <option value="НИШ">НИШ ФМН</option>
+                    <option value="Лицей №9">Гимназия №9</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Сетка товаров -->
+        <div id="itemsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Карточки генерируются через JS -->
+        </div>
+    </main>
+
+    <!-- Модальное окно: Регистрация / Вход -->
+    <div id="authModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative">
+            <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 eco-gradient text-white rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h2 class="text-xl font-bold">Добро пожаловать в EcoKul!</h2>
+                <p class="text-sm text-gray-500">Зарегистрируйтесь и получите <span class="text-emerald-600 font-bold">+150 Эко-баллов</span> на счет</p>
+            </div>
+            <form onsubmit="handleAuth(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ваше имя (Ученик или Родитель)</label>
+                    <input type="text" id="inputName" required placeholder="Например: Алия Серикова" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ваша школа</label>
+                    <select id="inputSchool" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                        <option value="Школа №21">СШ №21</option>
+                        <option value="НИШ">НИШ ФМН</option>
+                        <option value="Лицей №9">Гимназия №9</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full eco-gradient text-white font-semibold py-2.5 rounded-lg hover:opacity-95 transition">
+                    Начать пользоваться
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Добавление товара -->
+    <div id="addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('addModal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h2 class="text-xl font-bold mb-1">Добавить объявление</h2>
+            <p class="text-xs text-emerald-600 font-medium mb-4">+50 Эко-баллов начислится сразу после публикации!</p>
+            
+            <form onsubmit="handleAddItem(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Название вещи</label>
+                    <input type="text" id="itemTitle" required placeholder="Например: Пиджак школьный (рост 152)" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+                        <select id="itemCategory" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="uniform">👔 Школьная форма</option>
+                            <option value="books">📚 Учебники</option>
+                            <option value="stationery">✏️ Канцелярия</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Состояние</label>
+                        <select id="itemCondition" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="Отличное">Отличное</option>
+                            <option value="Хорошее">Хорошее</option>
+                            <option value="Новое">Новое</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Способ обмена / Цена</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <select id="itemDealType" onchange="togglePriceInput()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="points">За Эко-баллы</option>
+                            <option value="tenge">За символичные ₸</option>
+                            <option value="free">Отдам даром (Эко)</option>
+                        </select>
+                        <input type="number" id="itemPrice" value="100" min="0" placeholder="Сумма" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Фотография товара</label>
+                    <input type="file" id="itemPhoto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                    <p class="text-[11px] text-gray-400 mt-1">Если фото не выбрано, подставится стандартная иконка категории</p>
+                </div>
+
+                <button type="submit" class="w-full eco-gradient text-white font-semibold py-2.5 rounded-lg hover:opacity-95 transition">
+                    Опубликовать и получить баллы
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Уведомление (Toast) -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center space-x-3">
+        <i class="fas fa-check-circle text-emerald-400 text-xl"></i>
+        <span id="toastMsg" class="text-sm font-medium">Действие выполнено!</span>
+    </div>
+
+    <script>
+        // Состояние приложения
+        let currentUser = null;
+        let currentFilter = 'all';
+
+        // Начальные демо-товары для жюри
+        let items = [
+            {
+                id: 1,
+                title: "Комплект учебников за 7 класс (Алгебра, Физика, История)",
+                category: "books",
+                condition: "Отличное",
+                school: "Школа №21",
+                dealType: "points",
+                price: 120,
+                author: "Данияр К. (8 «Б»)",
+                image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=500&q=80",
+                sold: false
+            },
+            {
+                id: 2,
+                title: "Темно-синий школьный пиджак и брюки (рост 158 см)",
+                category: "uniform",
+                condition: "Хорошее",
+                school: "Школа №21",
+                dealType: "tenge",
+                price: 2500,
+                author: "Мадина С. (Родитель)",
+                image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=500&q=80",
+                sold: false
+            },
+            {
+                id: 3,
+                title: "Ортопедический рюкзак + пенал",
+                category: "stationery",
+                condition: "Отличное",
+                school: "НИШ",
+                dealType: "free",
+                price: 0,
+                author: "Алихан Т.",
+                image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80",
+                sold: false
+            },
+            {
+                id: 4,
+                title: "Сборник задач по химии 8-9 класс + атлас",
+                category: "books",
+                condition: "Новое",
+                school: "Лицей №9",
+                dealType: "points",
+                price: 80,
+                author: "Елена В.",
+                image: "https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=500&q=80",
+                sold: false
+            }
+        ];
+
+        // Инициализация каталога
+        function renderCatalog() {
+            const grid = document.getElementById('itemsGrid');
+            const schoolFilter = document.getElementById('schoolFilter').value;
+            grid.innerHTML = '';
+
+            const filtered = items.filter(item => {
+                const matchCat = currentFilter === 'all' || item.category === currentFilter;
+                const matchSchool = schoolFilter === 'all' || item.school === schoolFilter;
+                return matchCat && matchSchool;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400">В этой категории пока нет объявлений. Будьте первым!</div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                let priceBadge = '';
+                if (item.dealType === 'points') {
+                    priceBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-lg text-sm"><i class="fas fa-coins text-yellow-500 mr-1"></i>${item.price} баллов</span>`;
+                } else if (item.dealType === 'tenge') {
+                    priceBadge = `<span class="bg-blue-100 text-blue-800 font-bold px-2.5 py-1 rounded-lg text-sm">${item.price} ₸</span>`;
+                } else {
+                    priceBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-lg text-sm">🎁 Даром</span>`;
+                }
+
+                const catNames = { uniform: 'Форма', books: 'Учебники', stationery: 'Канцелярия' };
+
+                const card = `
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col justify-between transition hover:shadow-md ${item.sold ? 'opacity-60' : ''}">
+                        <div>
+                            <div class="relative h-48 bg-gray-200">
+                                <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover">
+                                <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm">
+                                    ${catNames[item.category]}
+                                </span>
+                                <span class="absolute top-3 right-3 bg-gray-900/70 text-white text-xs px-2 py-1 rounded-md">
+                                    ${item.school}
+                                </span>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex justify-between items-start gap-2 mb-2">
+                                    <h3 class="font-bold text-gray-800 text-base leading-snug">${item.title}</h3>
+                                </div>
+                                <div class="flex items-center text-xs text-gray-500 space-x-3 mb-4">
+                                    <span><i class="fas fa-star text-yellow-400 mr-1"></i>Состояние: ${item.condition}</span>
+                                    <span><i class="fas fa-user mr-1"></i>${item.author}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="px-4 pb-4 pt-2 border-t border-gray-50 flex items-center justify-between">
+                            ${priceBadge}
+                            ${item.sold 
+                                ? `<span class="text-sm font-semibold text-gray-400"><i class="fas fa-check mr-1"></i>Забрали</span>`
+                                : `<button onclick="buyItem(${item.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                                    Забрать
+                                   </button>`
+                            }
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += card;
+            });
+        }
+
+        // Фильтрация по категориям
+        function filterItems(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-600', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-600');
+            });
+            event.target.classList.remove('bg-white', 'text-gray-600');
+            event.target.classList.add('bg-emerald-600', 'text-white');
+            renderCatalog();
+        }
+
+        // Авторизация
+        function handleAuth(e) {
+            e.preventDefault();
+            const name = document.getElementById('inputName').value;
+            const school = document.getElementById('inputSchool').value;
+
+            currentUser = {
+                name: name,
+                school: school,
+                points: 150
+            };
+
+            document.getElementById('authBtn').classList.add('hidden');
+            document.getElementById('userProfile').classList.remove('hidden');
+            document.getElementById('userStats').classList.remove('hidden');
+            
+            document.getElementById('userNameDisplay').innerText = name;
+            document.getElementById('userAvatar').innerText = name[0].toUpperCase();
+            updatePointsDisplay();
+
+            closeModal('authModal');
+            showToast(`Привет, ${name}! Начислено 150 стартовых Эко-баллов.`);
+        }
+
+        // Обновление баллов и уровня
+        function updatePointsDisplay() {
+            if (!currentUser) return;
+            document.getElementById('userPoints').innerText = currentUser.points;
+            const levelEl = document.getElementById('userLevel');
+            if (currentUser.points >= 250) {
+                levelEl.innerText = "Эко-Герой Школы 🏆";
+            } else if (currentUser.points >= 180) {
+                levelEl.innerText = "Хранитель Природы 🌿";
+            } else {
+                levelEl.innerText = "Эко-Новичок 🌱";
+            }
+        }
+
+        // Проверка авторизации перед добавлением
+        function checkAuthAndOpenAdd() {
+            if (!currentUser) {
+                showToast("Сначала войдите в систему, чтобы копить баллы!");
+                openModal('authModal');
+                return;
+            }
+            openModal('addModal');
+        }
+
+        // Переключение поля цены
+        function togglePriceInput() {
+            const type = document.getElementById('itemDealType').value;
+            const priceInput = document.getElementById('itemPrice');
+            if (type === 'free') {
+                priceInput.value = 0;
+                priceInput.disabled = true;
+            } else {
+                priceInput.disabled = false;
+                priceInput.value = type === 'points' ? 100 : 1500;
+            }
+        }
+
+        // Добавление нового товара
+        function handleAddItem(e) {
+            e.preventDefault();
+            const title = document.getElementById('itemTitle').value;
+            const category = document.getElementById('itemCategory').value;
+            const condition = document.getElementById('itemCondition').value;
+            const dealType = document.getElementById('itemDealType').value;
+            const price = parseInt(document.getElementById('itemPrice').value) || 0;
+            const photoInput = document.getElementById('itemPhoto');
+
+            const defaultImages = {
+                uniform: "https://images.unsplash.com/photo-1604671801908-6f0c6a092c05?auto=format&fit=crop&w=500&q=80",
+                books: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=500&q=80",
+                stationery: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=500&q=80"
+            };
+
+            const finalizeAdd = (imgSrc) => {
+                const newItem = {
+                    id: Date.now(),
+                    title,
+                    category,
+                    condition,
+                    school: currentUser.school,
+                    dealType,
+                    price,
+                    author: currentUser.name,
+                    image: imgSrc,
+                    sold: false
+                };
+
+                items.unshift(newItem);
+                currentUser.points += 50; // Награда за добавление вещи
+                updatePointsDisplay();
+                
+                // Обновляем общую статистику школы
+                const reusedEl = document.getElementById('itemsReused');
+                reusedEl.innerText = (parseInt(reusedEl.innerText) + 1) + " 🎒";
+
+                renderCatalog();
+                closeModal('addModal');
+                e.target.reset();
+                showToast("Объявление опубликовано! Вы получили +50 Эко-баллов!");
+            };
+
+            // Если пользователь загрузил реальное фото с компьютера/телефона
+            if (photoInput.files && photoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    finalizeAdd(event.target.result);
+                };
+                reader.readAsDataURL(photoInput.files[0]);
+            } else {
+                finalizeAdd(defaultImages[category]);
+            }
+        }
+
+        // Покупка / Обмен товара
+        function buyItem(id) {
+            if (!currentUser) {
+                showToast("Войдите в аккаунт, чтобы забрать вещь!");
+                openModal('authModal');
+                return;
+            }
+
+            const item = items.find(i => i.id === id);
+            if (!item || item.sold) return;
+
+            if (item.dealType === 'points') {
+                if (currentUser.points < item.price) {
+                    showToast(`Недостаточно Эко-баллов! Нужно ${item.price}, у вас ${currentUser.points}.`);
+                    return;
+                }
+                currentUser.points -= item.price;
+                updatePointsDisplay();
+                showToast(`Успешно! Вы обменяли "${item.title}" за ${item.price} баллов.`);
+            } else if (item.dealType === 'tenge') {
+                currentUser.points += 20; // Бонус за покупку б/у вместо нового
+                updatePointsDisplay();
+                showToast(`Забронировано за ${item.price} ₸! +20 Эко-баллов за осознанное потребление!`);
+            } else {
+                currentUser.points += 20;
+                updatePointsDisplay();
+                showToast(`Вы забрали вещь даром! +20 Эко-баллов начислено!`);
+            }
+
+            item.sold = true;
+            renderCatalog();
+        }
+
+        // Управление модальными окнами
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Всплывающие уведомления
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+
+        // Запуск при загрузке
+        renderCatalog();
+    </script>
+</body>
+</html>
